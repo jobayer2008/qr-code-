@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="bn"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>কিউআর স্টুডিও</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--tx:#161a23;--mu:#5d6577;--ac:#4f46e5;--bd:#dfe3ec}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1220;--card:#191d30;--tx:#eef0f8;--mu:#a2a9c0;--ac:#818cf8;--bd:#2c3250}}
+:root[data-theme=dark]{--bg:#0f1220;--card:#191d30;--tx:#eef0f8;--mu:#a2a9c0;--ac:#818cf8;--bd:#2c3250}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:'Noto Sans Bengali','Kalpurush','SolaimanLipi',system-ui,sans-serif;padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+main{max-width:920px;margin:auto;padding:14px}
+h1{font-size:1.6rem;margin:.2em 0}h2{font-size:1.15rem;margin:.3em 0 .6em}
+.mu{color:var(--mu)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.tile{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px 8px;text-align:center;font:inherit;color:inherit;cursor:pointer;min-height:64px}
+.tile b{display:block;font-size:1.5rem}
+button,select,input,textarea{font:inherit;color:var(--tx)}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:12px;padding:12px 16px;min-height:46px;cursor:pointer;font-weight:600}
+.btn.o{background:transparent;color:var(--ac);border:1.5px solid var(--ac)}
+.btn.r{background:#dc2626}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+label{display:block;font-size:.9rem;margin:10px 0 4px;color:var(--mu)}
+input:not([type=color]):not([type=range]):not([type=file]),select,textarea{width:100%;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--bg)}
+input[type=color]{width:100%;height:44px;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+input[type=range]{width:100%}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lay{display:grid;gap:14px}@media(min-width:800px){.lay{grid-template-columns:1fr 1fr}.sticky{position:sticky;top:10px;align-self:start}}
+#pv{background:#fff;border-radius:12px;padding:8px;text-align:center;min-height:200px;display:flex;align-items:center;justify-content:center}
+#pv svg{max-width:100%;height:auto;max-height:420px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav button{flex:1;background:none;border:0;padding:8px 2px;font-size:.72rem;color:var(--mu);cursor:pointer}
+nav button b{display:block;font-size:1.3rem}nav button.on{color:var(--ac);font-weight:700}
+.chip{border:1px solid var(--bd);background:var(--card);border-radius:20px;padding:8px 14px;cursor:pointer}
+.chip.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:#222;color:#fff;padding:12px 18px;border-radius:12px;z-index:20;display:none;max-width:90%}
+.warn{background:#fef3c7;color:#78350f;border-radius:12px;padding:10px;margin-top:10px}
+.ov{position:fixed;inset:0;background:#000a;z-index:30;display:none;align-items:center;justify-content:center;padding:14px}
+.ov>div{background:var(--card);border-radius:16px;padding:14px;max-width:420px;width:100%;max-height:90vh;overflow:auto;text-align:center}
+.ov svg{max-width:100%;height:auto;background:#fff}
+video{width:100%;border-radius:12px;background:#000}
+#pr{display:none}
+@media print{body>*:not(#pr){display:none!important}#pr{display:block}:root{padding:0}body{padding:0;background:#fff}}
+.item{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
+</style></head><body>
+<main id="app"></main>
+<nav id="nav"></nav><div id="toast"></div>
+<div class="ov" id="ov"><div id="ovc"></div></div><div id="pr"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const bn=n=>String(n).replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]);
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){toast('⚠️ সংরক্ষণ করা যায়নি।')}}};
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2600)}
+
+/* ধরন: [আইকন, নাম, ফিল্ড[key,লেবেল,ধরন,অপশন], পেলোড] */
+const T={
+web:['🌐','ওয়েবসাইট',[['u','ওয়েবসাইটের ঠিকানা','url']],d=>d.u],
+text:['📝','লেখা',[['t','আপনার লেখা','area']],d=>d.t],
+tel:['📞','ফোন নম্বর',[['p','ফোন নম্বর','tel']],d=>'tel:'+d.p],
+wa:['💬','হোয়াটসঅ্যাপ',[['p','নম্বর (দেশের কোডসহ)','tel'],['m','বার্তা (ঐচ্ছিক)','area']],d=>'https://wa.me/'+d.p.replace(/\D/g,'')+(d.m?'?text='+encodeURIComponent(d.m):'')],
+mail:['📧','ই-মেইল',[['e','ই-মেইল ঠিকানা','email'],['s','বিষয়'],['m','বার্তা','area']],d=>'mailto:'+d.e+'?subject='+encodeURIComponent(d.s||'')+'&body='+encodeURIComponent(d.m||'')],
+wifi:['📶','ওয়াই-ফাই',[['n','ওয়াই-ফাইয়ের নাম'],['p','পাসওয়ার্ড'],['t','নিরাপত্তার ধরন','sel',[['WPA','WPA/WPA2'],['WEP','WEP'],['nopass','পাসওয়ার্ড নেই']]]],d=>'WIFI:T:'+(d.t||'WPA')+';S:'+d.n.replace(/([\\;,:"])/g,'\\$1')+';P:'+(d.p||'').replace(/([\\;,:"])/g,'\\$1')+';;'],
+contact:['👤','যোগাযোগ',[['n','নাম'],['o','প্রতিষ্ঠান'],['p','ফোন','tel'],['e','ই-মেইল','email'],['w','ওয়েবসাইট','url'],['a','ঠিকানা']],d=>'BEGIN:VCARD\nVERSION:3.0\nFN:'+d.n+'\nORG:'+(d.o||'')+'\nTEL:'+(d.p||'')+'\nEMAIL:'+(d.e||'')+'\nURL:'+(d.w||'')+'\nADR:;;'+(d.a||'')+';;;;\nEND:VCARD'],
+geo:['📍','অবস্থান',[['l','ম্যাপের লিংক অথবা অক্ষাংশ,দ্রাঘিমাংশ']],d=>/^-?\d+(\.\d+)?\s*,\s*-?\d/.test(d.l)?'geo:'+d.l.replace(/\s/g,''):d.l],
+sms:['📱','এসএমএস',[['p','ফোন নম্বর','tel'],['m','বার্তা','area']],d=>'SMSTO:'+d.p+':'+(d.m||'')],
+event:['📅','অনুষ্ঠান',[['t','অনুষ্ঠানের নাম'],['d','তারিখ ও সময়','datetime-local'],['l','স্থান']],d=>'BEGIN:VEVENT\nSUMMARY:'+d.t+'\nDTSTART:'+(d.d||'').replace(/[-:]/g,'')+'00\nLOCATION:'+(d.l||'')+'\nEND:VEVENT'],
+social:['🔗','সামাজিক যোগাযোগমাধ্যম',[['k','মাধ্যম','sel',[['ফেসবুক','ফেসবুক'],['ইউটিউব','ইউটিউব'],['ইনস্টাগ্রাম','ইনস্টাগ্রাম'],['টিকটক','টিকটক'],['হোয়াটসঅ্যাপ','হোয়াটসঅ্যাপ'],['অন্যান্য','অন্যান্য লিংক']]],['u','প্রোফাইল/পেজের লিংক','url']],d=>d.u]
+};
+const TPL=[
+['ব্যবসায়িক',[['ব্যবসায়িক কার্ড','contact','যোগাযোগ সংরক্ষণ করতে স্ক্যান করুন'],['দোকানের কিউআর','web','আমাদের দোকান দেখুন'],['প্রতিষ্ঠানের কিউআর','web','স্ক্যান করে দেখুন'],['গ্রাহক যোগাযোগ','wa','মেসেজ করতে স্ক্যান করুন'],['কাস্টমার সাপোর্ট','tel','সহায়তার জন্য স্ক্যান করুন'],['ব্যবসার লোকেশন','geo','আমাদের অবস্থান']]],
+['ব্যক্তিগত',[['ব্যক্তিগত প্রোফাইল','web','আমার প্রোফাইল'],['ডিজিটাল ভিজিটিং কার্ড','contact','আমার যোগাযোগ'],['ব্যক্তিগত যোগাযোগ','tel','কল করতে স্ক্যান করুন'],['পোর্টফোলিও','web','আমার কাজ দেখুন'],['আমার সম্পর্কে','text','আমার সম্পর্কে']]],
+['সামাজিক যোগাযোগমাধ্যম',[['ফেসবুক','social','আমাদের ফেসবুক পেজ'],['ইউটিউব','social','আমাদের ইউটিউব চ্যানেল'],['ইনস্টাগ্রাম','social','আমাদের ইনস্টাগ্রাম'],['টিকটক','social','আমাদের টিকটক'],['হোয়াটসঅ্যাপ','wa','হোয়াটসঅ্যাপে মেসেজ করুন'],['সব সামাজিক যোগাযোগমাধ্যম','web','আমাদের সব লিংক']]],
+['রেস্টুরেন্ট',[['ডিজিটাল মেনু','web','মেনু দেখতে স্ক্যান করুন'],['খাবারের অর্ডার','web','অর্ডার করতে স্ক্যান করুন'],['টেবিল কিউআর','web','টেবিল থেকে অর্ডার করুন'],['রিভিউ কিউআর','web','আপনার মতামত দিন'],['রেস্টুরেন্টের তথ্য','text','রেস্টুরেন্টের তথ্য']]],
+['ওয়াই-ফাই',[['বাসার ওয়াই-ফাই','wifi','ওয়াই-ফাই সংযোগ করতে স্ক্যান করুন'],['অফিস ওয়াই-ফাই','wifi','ওয়াই-ফাই সংযোগ করতে স্ক্যান করুন'],['দোকানের ওয়াই-ফাই','wifi','ওয়াই-ফাই সংযোগ করতে স্ক্যান করুন'],['অতিথিদের ওয়াই-ফাই','wifi','অতিথিদের ওয়াই-ফাই']]],
+['পণ্য',[['পণ্যের তথ্য','web','পণ্যের তথ্য দেখুন'],['পণ্যের ওয়েবসাইট','web','ওয়েবসাইট দেখুন'],['পণ্যের অর্ডার','web','অর্ডার করতে স্ক্যান করুন'],['পণ্যের ওয়ারেন্টি','web','ওয়ারেন্টি যাচাই করুন'],['পণ্যের রিভিউ','web','রিভিউ দিন']]],
+['অনুষ্ঠান',[['বিয়ের অনুষ্ঠান','event','আমাদের অনুষ্ঠানে আপনাকে আমন্ত্রণ'],['জন্মদিন','event','জন্মদিনের আমন্ত্রণ'],['দাওয়াত','event','আপনাকে দাওয়াত'],['সেমিনার','event','সেমিনারে যোগ দিন'],['অনুষ্ঠান নিবন্ধন','web','নিবন্ধন করতে স্ক্যান করুন'],['আমন্ত্রণপত্র','text','আমন্ত্রণপত্র']]],
+['লোকেশন',[['দোকানের অবস্থান','geo','দোকানের অবস্থান'],['অফিসের অবস্থান','geo','অফিসের অবস্থান'],['বাসার অবস্থান','geo','বাসার অবস্থান'],['গুগল ম্যাপ','geo','ম্যাপে দেখুন']]]];
+const P=[['আধুনিক',{fg:'#4f46e5',bg:'#ffffff',shape:'rd',corner:.3}],['সাধারণ',{fg:'#000000',bg:'#ffffff',shape:'sq',corner:0}],['প্রফেশনাল',{fg:'#0f3d5e',bg:'#ffffff',shape:'sq',corner:.2}],['প্রিমিয়াম',{fg:'#7c5a10',bg:'#fffaf0',shape:'dot',corner:.5}],['রঙিন',{fg:'#db2777',bg:'#fef3c7',shape:'dot',corner:.5}]];
+const defO=()=>({fg:'#111827',bg:'#ffffff',shape:'sq',corner:0,margin:3,size:1200,logo:'',ls:22,lshape:'rd',lpad:1,top:'',bot:'',font:'sans-serif',fs:28});
+let st={type:'web',d:{},o:defO(),editId:null,pi:-1,pr:'a4',cw:60,ch:40};
+
+/* একটিই SVG রেন্ডারার: প্রিভিউ, ডাউনলোড ও প্রিন্ট সবই এটি থেকে */
+function svg(pay,o){
+ const q=qrcode(0,'H');q.addData(pay);q.make();const n=q.getModuleCount(),c=10,m=+o.margin,S=(n+2*m)*c;
+ const hT=o.top?+o.fs*2:0,hB=o.bot?+o.fs*2:0,H=S+hT+hB,ox=m*c,oy=hT+m*c;
+ let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${H}" width="${S}" height="${H}"><rect width="${S}" height="${H}" fill="${o.bg}"/>`;
+ const fin=(r,k)=>(r<7&&k<7)||(r<7&&k>=n-7)||(r>=n-7&&k<7);
+ for(let r=0;r<n;r++)for(let k=0;k<n;k++){if(fin(r,k)||!q.isDark(r,k))continue;const x=ox+k*c,y=oy+r*c;
+  s+=o.shape=='dot'?`<circle cx="${x+5}" cy="${y+5}" r="4.2" fill="${o.fg}"/>`:o.shape=='rd'?`<rect x="${x}" y="${y}" width="10.2" height="10.2" rx="3.5" fill="${o.fg}"/>`:`<rect x="${x}" y="${y}" width="10.2" height="10.2" fill="${o.fg}"/>`}
+ [[0,0],[0,n-7],[n-7,0]].forEach(([r,k])=>{const x=ox+k*c,y=oy+r*c,R=o.corner;
+  s+=`<rect x="${x}" y="${y}" width="70" height="70" rx="${70*R*.5}" fill="${o.fg}"/><rect x="${x+10}" y="${y+10}" width="50" height="50" rx="${50*R*.5}" fill="${o.bg}"/><rect x="${x+20}" y="${y+20}" width="30" height="30" rx="${30*R*.5}" fill="${o.fg}"/>`});
+ if(o.logo){const L=n*c*o.ls/100,cx=S/2,cy=oy+n*c/2,p=+o.lpad*c*.6,B=L+2*p;
+  s+=`<rect x="${cx-B/2}" y="${cy-B/2}" width="${B}" height="${B}" rx="${o.lshape=='rd'?B/2:6}" fill="${o.bg}"/><clipPath id="lc"><rect x="${cx-L/2}" y="${cy-L/2}" width="${L}" height="${L}" rx="${o.lshape=='rd'?L/2:4}"/></clipPath><image href="${o.logo}" x="${cx-L/2}" y="${cy-L/2}" width="${L}" height="${L}" preserveAspectRatio="xMidYMid slice" clip-path="url(#lc)"/>`}
+ const tx=(t,y)=>`<text x="${S/2}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="${o.font}" font-size="${o.fs}" font-weight="700" fill="${o.fg}">${esc(t)}</text>`;
+ if(o.top)s+=tx(o.top,hT/2+m);if(o.bot)s+=tx(o.bot,H-hB/2-m);
+ return s+'</svg>'}
+const payload=()=>{const c=T[st.type];if(!c[2].some(f=>f[2]!='sel')||!st.d[c[2].find(f=>f[2]!='sel')[0]])return null;try{return c[3](st.d)}catch(e){return null}};
+const cur=()=>{const p=payload();return p?svg(p,st.o):null};
+function raster(sv,w,type,cb){const im=new Image();im.onload=()=>{const cv=document.createElement('canvas'),r=im.height/im.width;cv.width=w;cv.height=Math.round(w*r);const x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,cv.width,cv.height);x.drawImage(im,0,0,cv.width,cv.height);cb(cv)};im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(sv)}
+function save(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+function dl(fmt,sv){sv=sv||cur();if(!sv)return toast('⚠️ অনুগ্রহ করে প্রয়োজনীয় তথ্য দিন।');
+ if(fmt=='svg'){save(new Blob([sv],{type:'image/svg+xml'}),'qr.svg');return toast('✅ ছবি ডাউনলোড হয়েছে।')}
+ const mt=fmt=='jpg'?'image/jpeg':'image/png';raster(sv,+st.o.size,mt,cv=>cv.toBlob(b=>{save(b,'qr.'+fmt);toast('✅ ছবি ডাউনলোড হয়েছে।')},mt,.95))}
+function verify(){const sv=cur();if(!sv)return toast('⚠️ অনুগ্রহ করে প্রয়োজনীয় তথ্য দিন।');
+ raster(sv,700,'',cv=>{const d=cv.getContext('2d').getImageData(0,0,cv.width,cv.height),r=jsQR(d.data,d.width,d.height);toast(r&&r.data==payload()?'✅ পরীক্ষা সফল: কিউআর কোড শনাক্ত হয়েছে।':'⚠️ স্ক্যান হয়নি। রং বা লোগোর আকার কমিয়ে আবার দেখুন।')})}
+async function share(){const sv=cur();if(!sv)return toast('⚠️ অনুগ্রহ করে প্রয়োজনীয় তথ্য দিন।');
+ if(!navigator.share)return toast('⚠️ এই ব্রাউজারে শেয়ার সুবিধা নেই। ডাউনলোড করুন।');
+ raster(sv,900,'',cv=>cv.toBlob(async b=>{const f=new File([b],'qr.png',{type:'image/png'});try{if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]});else await navigator.share({text:payload()})}catch(e){}}))}
+function printQ(){const sv=cur();if(!sv)return toast('⚠️ অনুগ্রহ করে প্রয়োজনীয় তথ্য দিন।');
+ const w={a4:'150mm',a5:'110mm',card:'50mm',label:'30mm',custom:st.cw+'mm'}[st.pr];$('#pr').innerHTML=`<div style="width:${w};margin:10mm auto">${sv.replace(/width="\d+" height="\d+"/,'width="100%"')}</div>`;window.print()}
+function saveQ(){const p=payload();if(!p)return toast('⚠️ অনুগ্রহ করে প্রয়োজনীয় তথ্য দিন।');
+ const L=store.get('qs',[]),it={id:st.editId||Date.now(),name:T[st.type][1]+(st.d.u?' — '+st.d.u.replace(/^https?:\/\//,'').slice(0,24):''),type:st.type,d:st.d,o:st.o,date:new Date().toLocaleDateString('bn-BD',{day:'numeric',month:'long',year:'numeric'})};
+ const i=L.findIndex(x=>x.id==it.id);if(i>=0)L[i]=it;else L.unshift(it);store.set('qs',L);st.editId=it.id;toast('✅ কিউআর সংরক্ষণ করা হয়েছে।')}
+
+/* পেজ */
+const NAV=[['home','🏠','হোম'],['create','➕','কিউআর তৈরি'],['tpl','🎨','টেমপ্লেট'],['mine','📂','আমার কিউআর'],['scan','📷','স্ক্যান'],['set','⚙️','সেটিংস']];
+let page='home';
+function go(p){stopCam();page=p;$('#nav').innerHTML=NAV.map(n=>`<button class="${n[0]==p?'on':''}" onclick="go('${n[0]}')"><b>${n[1]}</b>${n[2]}</button>`).join('');$('#app').innerHTML=V[p]();if(V[p+'_']) V[p+'_']();scrollTo(0,0)}
+function openType(t){st={type:t,d:{},o:defO(),editId:null,pi:-1,pr:'a4',cw:60,ch:40};go('create')}
+const V={
+home:()=>`<h1>কিউআর স্টুডিও</h1><p class="mu">সহজেই তৈরি করুন আপনার নিজের কিউআর কোড</p><div class="card"><h2>আপনার নিজের কিউআর কোড তৈরি করুন</h2><p class="mu">টেমপ্লেট বেছে নিন, তথ্য দিন এবং সুন্দর কিউআর কোড তৈরি করুন।</p><div class="row"><button class="btn" onclick="openType('web')">➕ কিউআর তৈরি করুন</button><button class="btn o" onclick="go('tpl')">🎨 টেমপ্লেট দেখুন</button></div></div><h2>দ্রুত তৈরি করুন</h2><div class="grid">${Object.entries(T).map(([k,v])=>`<button class="tile" onclick="openType('${k}')"><b>${v[0]}</b>${v[1]}</button>`).join('')}</div><p class="mu">🔒 আপনার দেওয়া তথ্য শুধু আপনার ব্রাউজারেই থাকে, কোনো সার্ভারে পাঠানো হয় না।</p>`,
+create:()=>{const c=T[st.type],o=st.o;return `<div class="lay"><div>
+<div class="card"><h2>১. তথ্য দিন</h2><label>কিউআরের ধরন</label><select id="ty" onchange="st.type=this.value;st.d={};go('create')">${Object.entries(T).map(([k,v])=>`<option value="${k}" ${k==st.type?'selected':''}>${v[0]} ${v[1]}</option>`).join('')}</select>
+${c[2].map(f=>{const id='data-d="'+f[0]+'"';return `<label>${f[1]}</label>`+(f[2]=='area'?`<textarea rows="3" ${id}></textarea>`:f[2]=='sel'?`<select ${id}>${f[3].map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('')}</select>`:`<input type="${f[2]||'text'}" ${id}>`)}).join('')}</div>
+<div class="card"><h2>২. ডিজাইন বেছে নিন</h2><div class="row">${P.map((p,i)=>`<button class="chip ${st.pi==i?'on':''}" onclick="pre(${i})">${p[0]}</button>`).join('')}</div>
+<div class="two"><div><label>কিউআরের রং</label><input type="color" data-o="fg" value="${o.fg}"></div><div><label>ব্যাকগ্রাউন্ডের রং</label><input type="color" data-o="bg" value="${o.bg}"></div>
+<div><label>বিন্দুর আকৃতি</label><select data-o="shape"><option value="sq" ${o.shape=='sq'?'selected':''}>চৌকো</option><option value="rd" ${o.shape=='rd'?'selected':''}>নরম চৌকো</option><option value="dot" ${o.shape=='dot'?'selected':''}>গোল</option></select></div>
+<div><label>কোণার আকৃতি</label><select data-o="corner"><option value="0" ${o.corner==0?'selected':''}>চৌকো</option><option value="0.3" ${o.corner==.3?'selected':''}>নরম</option><option value="0.5" ${o.corner==.5?'selected':''}>গোল</option></select></div></div>
+<label>চারপাশের ফাঁকা জায়গা</label><input type="range" min="1" max="8" data-o="margin" value="${o.margin}">
+<label>ডাউনলোডের আকার</label><select data-o="size">${[600,1200,2400].map(v=>`<option value="${v}" ${o.size==v?'selected':''}>${bn(v)} পিক্সেল</option>`).join('')}</select></div>
+<div class="card"><h2>৩. লোগো ও লেখা</h2><label>লোগো নির্বাচন করুন</label><input type="file" accept="image/*" id="lg"><div class="row" style="margin-top:6px"><button class="btn o" onclick="st.o.logo='';upd()">লোগো সরান</button></div>
+<label>লোগোর আকার</label><input type="range" min="10" max="30" data-o="ls" value="${o.ls}">
+<label>লোগোর চারপাশে ফাঁকা জায়গা</label><input type="range" min="0" max="3" step=".5" data-o="lpad" value="${o.lpad}">
+<label>লোগোর আকৃতি</label><select data-o="lshape"><option value="rd" ${o.lshape=='rd'?'selected':''}>গোল</option><option value="sq" ${o.lshape=='sq'?'selected':''}>চৌকো</option></select>
+<label>উপরের লেখা</label><input data-o="top" value="${esc(o.top)}"><label>নিচের লেখা</label><input data-o="bot" value="${esc(o.bot)}" placeholder="যেমন: স্ক্যান করে দেখুন">
+<div class="two"><div><label>ফন্ট</label><select data-o="font">${[['sans-serif','সাধারণ'],['serif','সেরিফ'],['monospace','মনোস্পেস'],['cursive','হাতের লেখা']].map(f=>`<option value="${f[0]}" ${o.font==f[0]?'selected':''}>${f[1]}</option>`).join('')}</select></div><div><label>লেখার আকার</label><input type="range" min="16" max="48" data-o="fs" value="${o.fs}"></div></div></div>
+</div><div class="sticky"><div class="card"><h2>পূর্বরূপ দেখুন</h2><div id="pv"></div>
+<div class="row" style="margin-top:10px"><button class="btn" onclick="gen()">কিউআর তৈরি করুন</button><button class="btn o" onclick="saveQ()">💾 সংরক্ষণ করুন</button></div><div id="wn"></div></div>
+<div class="card"><h2>ডাউনলোড ও শেয়ার</h2><div class="row"><button class="btn o" onclick="dl('png')">PNG</button><button class="btn o" onclick="dl('jpg')">JPG</button><button class="btn o" onclick="dl('svg')">SVG</button><button class="btn o" onclick="share()">শেয়ার করুন</button></div></div>
+<div class="card"><h2>🖨️ প্রিন্ট করুন</h2><label>সাইজ</label><select id="ps" onchange="st.pr=this.value;$('#cs').style.display=st.pr=='custom'?'block':'none'">${[['a4','A4'],['a5','A5'],['card','ভিজিটিং কার্ড'],['label','ছোট লেবেল'],['custom','কাস্টম সাইজ']].map(f=>`<option value="${f[0]}" ${st.pr==f[0]?'selected':''}>${f[1]}</option>`).join('')}</select>
+<div id="cs" style="display:${st.pr=='custom'?'block':'none'}"><label>প্রস্থ (মিলিমিটার)</label><input type="number" min="10" max="190" value="${st.cw}" oninput="st.cw=this.value"></div>
+<p class="mu">প্রিন্ট করার আগে ব্রাউজারের প্রিন্ট পূর্বরূপে দেখে নিতে পারবেন কাগজে কেমন দেখাবে।</p><button class="btn" onclick="printQ()">🖨️ প্রিন্ট করুন</button></div></div></div>`},
+create_(){const c=T[st.type];c[2].forEach(f=>{const e=$(`[data-d="${f[0]}"]`);if(e&&st.d[f[0]]!=null)e.value=st.d[f[0]]; else if(e&&f[2]=='sel')st.d[f[0]]=e.value});
+ $('#app').oninput=$('#app').onchange=e=>{const t=e.target;if(t.dataset.d){st.d[t.dataset.d]=t.value}else if(t.dataset.o){const k=t.dataset.o;st.o[k]=['corner','margin','ls','lpad','fs','size'].includes(k)?+t.value:t.value;st.pi=-1}else return;upd()};
+ $('#lg').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{st.o.logo=r.result;upd()};r.readAsDataURL(f)};upd()},
+tpl:()=>`<h1>টেমপ্লেট</h1><p class="mu">আগে টেমপ্লেট বেছে নিন, তারপর নিজের তথ্য দিন।</p>`+TPL.map(g=>`<h2>${g[0]}</h2><div class="grid">${g[1].map(t=>`<button class="tile" onclick="useT('${t[1]}','${t[2]}')"><b>${T[t[1]][0]}</b>${t[0]}</button>`).join('')}</div>`).join(''),
+mine:()=>{const L=store.get('qs',[]);return `<h1>আমার কিউআর</h1>`+(L.length?L.map(x=>`<div class="card item"><div><b>${esc(x.name)}</b><div class="mu">তৈরি: ${x.date}</div></div><div class="row"><button class="btn o" onclick="see(${x.id})">দেখুন</button><button class="btn o" onclick="edit(${x.id})">সম্পাদনা</button><button class="btn o" onclick="dlId(${x.id})">ডাউনলোড</button><button class="btn r" onclick="del(${x.id})">মুছে ফেলুন</button></div></div>`).join(''):'<div class="card mu">এখনো কোনো কিউআর সংরক্ষণ করা হয়নি।</div>')},
+scan:()=>`<h1>📷 কিউআর স্ক্যান করুন</h1><div class="card"><video id="vd" playsinline muted></video><div class="row" style="margin-top:10px"><button class="btn" onclick="startCam()">ক্যামেরা চালু করুন</button><button class="btn o" onclick="stopCam()">বন্ধ করুন</button></div><label>অথবা ছবি থেকে স্ক্যান করুন</label><input type="file" accept="image/*" onchange="scanFile(this.files[0])"></div><div id="sr"></div>`,
+set:()=>`<h1>সেটিংস</h1><div class="card"><h2>থিম</h2><div class="row"><button class="btn o" onclick="theme('light')">☀️ লাইট মোড</button><button class="btn o" onclick="theme('dark')">🌙 ডার্ক মোড</button></div></div><div class="card"><h2>নিরাপত্তা</h2><p class="mu">আপনার দেওয়া সব তথ্য শুধু আপনার ব্রাউজারের Local Storage-এ থাকে। কিউআর তৈরি করার সময় দেওয়া তথ্য কিউআরের ভেতরেই থাকে, কোনো সার্ভারে যায় না।</p><button class="btn r" onclick="if(confirm('সব সংরক্ষিত কিউআর মুছে ফেলবেন?')){store.set('qs',[]);toast('✅ মুছে ফেলা হয়েছে।')}">সব তথ্য মুছে ফেলুন</button></div>`};
+function upd(){const s=cur();$('#pv').innerHTML=s||'<span class="mu" style="color:#666">তথ্য দিলে এখানে কিউআর দেখা যাবে</span>'}
+function gen(){if(!payload())return toast('⚠️ অনুগ্রহ করে প্রয়োজনীয় তথ্য দিন।');upd();toast('✅ কিউআর কোড তৈরি হয়েছে।');$('#wn').innerHTML='<div class="warn">কিউআর কোড স্ক্যান করে পরীক্ষা করে নিন। <button class="btn" style="margin-top:8px" onclick="verify()">এখনই পরীক্ষা করুন</button></div>'}
+function pre(i){Object.assign(st.o,P[i][1]);st.pi=i;const d=st.d,ed=st.editId;go('create');st.pi=i}
+function useT(t,cap){st={type:t,d:{},o:defO(),editId:null,pi:-1,pr:'a4',cw:60,ch:40};st.o.bot=cap;go('create')}
+const find=id=>store.get('qs',[]).find(x=>x.id==id);
+function see(id){const x=find(id);st2(x,s=>{$('#ovc').innerHTML=s+'<br><button class="btn" onclick="$(\'#ov\').style.display=\'none\'">বন্ধ করুন</button>';$('#ov').style.display='flex'})}
+function st2(x,cb){try{cb(svg(T[x.type][3](x.d),x.o))}catch(e){toast('⚠️ দেখানো যায়নি।')}}
+function edit(id){const x=find(id);st={type:x.type,d:x.d,o:x.o,editId:x.id,pi:-1,pr:'a4',cw:60,ch:40};go('create')}
+function dlId(id){const x=find(id);st2(x,s=>{st.o=x.o;dl('png',s)})}
+function del(id){if(!confirm('মুছে ফেলবেন?'))return;store.set('qs',store.get('qs',[]).filter(x=>x.id!=id));go('mine');toast('✅ মুছে ফেলা হয়েছে।')}
+function theme(t){document.documentElement.dataset.theme=t;store.set('th',t)}
+/* স্ক্যানার */
+let stream,raf;
+async function startCam(){try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});const v=$('#vd');v.srcObject=stream;await v.play();const cv=document.createElement('canvas'),x=cv.getContext('2d',{willReadFrequently:true});
+ (function loop(){if(!stream)return;if(v.videoWidth){cv.width=v.videoWidth;cv.height=v.videoHeight;x.drawImage(v,0,0);const d=x.getImageData(0,0,cv.width,cv.height),r=jsQR(d.data,d.width,d.height);if(r&&r.data){stopCam();return found(r.data)}}raf=requestAnimationFrame(loop)})()}catch(e){toast('⚠️ ক্যামেরা চালু করা যায়নি। অনুমতি দিন অথবা ছবি আপলোড করুন।')}}
+function stopCam(){cancelAnimationFrame(raf);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}}
+function scanFile(f){if(!f)return;const im=new Image();im.onload=()=>{const cv=document.createElement('canvas');cv.width=im.width;cv.height=im.height;const x=cv.getContext('2d');x.drawImage(im,0,0);const d=x.getImageData(0,0,cv.width,cv.height),r=jsQR(d.data,d.width,d.height);r?found(r.data):toast('⚠️ ছবিতে কিউআর পাওয়া যায়নি।')};im.src=URL.createObjectURL(f)}
+let last='';
+function found(t){last=t;const l=/^https?:\/\//i.test(t);$('#sr').innerHTML=`<div class="card"><b>✅ কিউআর কোড শনাক্ত হয়েছে</b><pre style="white-space:pre-wrap;word-break:break-all">${esc(t)}</pre><div class="row">${l?'<button class="btn" onclick="window.open(last,\'_blank\',\'noopener\')">লিংক খুলুন</button>':''}<button class="btn o" onclick="navigator.clipboard.writeText(last).then(()=>toast(\'✅ কপি করা হয়েছে।\'))">কপি করুন</button><button class="btn o" onclick="navigator.share?navigator.share({text:last}):toast(\'⚠️ শেয়ার সুবিধা নেই।\')">শেয়ার করুন</button></div></div>`}
+const th=store.get('th',null);if(th)document.documentElement.dataset.theme=th;
+go('home');
+</script></body></html>
